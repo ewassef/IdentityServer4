@@ -50,16 +50,11 @@ namespace IdentityServer4.EntityFramework.Stores
         /// </returns>
         public virtual async Task<Client> FindClientByIdAsync(string clientId)
         {
-            var exists = await Context.Clients
-                .CountAsync(x => x.ClientId == clientId);
-
-            if (exists != 1) return null;
-
-            var baseQuery = Context.Clients.AsTracking()
-                .Where(x => x.ClientId == clientId);
+            IQueryable<Entities.Client> baseQuery = Context.Clients.AsTracking()
+                .Where(x => x.ClientId == clientId)
+                .Take(1);
 
             var client = await baseQuery.FirstOrDefaultAsync();
-
             if (client == null) return null;
 
             await Context.Entry(client).Collection("AllowedCorsOrigins").LoadAsync();
@@ -73,7 +68,9 @@ namespace IdentityServer4.EntityFramework.Stores
             await Context.Entry(client).Collection("RedirectUris").LoadAsync();
 
             var model = client.ToModel();
+
             Logger.LogDebug("{clientId} found in database: {clientIdFound}", clientId, model != null);
+
             return model;
         }
     }
